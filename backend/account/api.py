@@ -21,7 +21,6 @@ def me(request):
         'avatar': request.user.get_avatar()
     })
 
-
 @api_view(['POST'])
 @authentication_classes([])
 @permission_classes([])
@@ -46,6 +45,7 @@ def signup(request):
         send_mail(
             "Please verify your email",
             f"The url for activating your account is: {url}",
+            "noreply@walizhetpis.com",
             [user.email],
             fail_silently=False,
         )
@@ -113,6 +113,7 @@ def editpassword(request):
         return JsonResponse({'message': 'success'})
     else:
         return JsonResponse({'message': form.errors.as_json()}, safe=False)
+        
 
 @api_view(['POST'])
 def send_friendship_request(request, pk):
@@ -131,21 +132,47 @@ def send_friendship_request(request, pk):
         return JsonResponse({'message': 'request already sent'})
 
 
+# @api_view(['POST'])
+# def handle_request(request, pk, status):
+#     user = User.objects.get(pk=pk)
+#     friendship_request = FriendshipRequest.objects.filter(created_for=request.user).get(created_by=user)
+#     friendship_request.status = status
+#     friendship_request.save()
+
+#     user.friends.add(request.user)
+#     user.friends_count = user.friends_count + 1
+#     user.save()
+
+#     request_user = request.user
+#     request_user.friends_count = request_user.friends_count + 1
+#     request_user.save()
+
+#     notification = create_notification(request, 'accepted_friendrequest', friendrequest_id=friendship_request.id)
+
+#     return JsonResponse({'message': 'friendship request updated'})
+
 @api_view(['POST'])
 def handle_request(request, pk, status):
     user = User.objects.get(pk=pk)
     friendship_request = FriendshipRequest.objects.filter(created_for=request.user).get(created_by=user)
+    
+    # Update the status of the friendship request
     friendship_request.status = status
     friendship_request.save()
 
-    user.friends.add(request.user)
-    user.friends_count = user.friends_count + 1
-    user.save()
+    # Add each other as friends if not already friends
+    if status == 'accepted' and not user.friends.filter(pk=request.user.pk).exists():
+        user.friends.add(request.user)
+        user.friends_count = user.friends.count()  # Update the count based on actual friends
+        user.save()
 
-    request_user = request.user
-    request_user.friends_count = request_user.friends_count + 1
-    request_user.save()
+        request_user = request.user
+        if not request_user.friends.filter(pk=user.pk).exists():
+            request_user.friends.add(user)
+            request_user.friends_count = request_user.friends.count()  # Update the count based on actual friends
+            request_user.save()
 
+    # Create a notification for the accepted friendship request
     notification = create_notification(request, 'accepted_friendrequest', friendrequest_id=friendship_request.id)
 
     return JsonResponse({'message': 'friendship request updated'})

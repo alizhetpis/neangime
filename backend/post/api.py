@@ -108,19 +108,21 @@ def post_create(request):
 def post_like(request, pk):
     post = Post.objects.get(pk=pk)
 
-    if not post.likes.filter(created_by=request.user):
-        like = Like.objects.create(created_by=request.user)
-
-        post = Post.objects.get(pk=pk)
+    like = post.likes.filter(created_by=request.user).first()  # Get the like object if it exists
+    if like:
+        post.likes.remove(like)  # Unlike the post
+        post.likes_count = post.likes_count - 1
+        like.delete()  # You should also delete the Like object if you want to completely remove it
+        post.save()
+        return JsonResponse({'message': 'like removed'})  # Indicate that the like was removed
+    else:
+        like = Like.objects.create(created_by=request.user)  # Like the post
         post.likes_count = post.likes_count + 1
         post.likes.add(like)
         post.save()
+        create_notification(request, 'post_like', post_id=post.id)  # Assuming this function creates a notification
+        return JsonResponse({'message': 'like created'})  # Indicate that the like was created
 
-        notification = create_notification(request, 'post_like', post_id=post.id)
-
-        return JsonResponse({'message': 'like created'})
-    else:
-        return JsonResponse({'message': 'post already liked'})
 
 
 @api_view(['POST'])
@@ -139,12 +141,25 @@ def post_create_comment(request, pk):
     return JsonResponse(serializer.data, safe=False)
 
 
+# @api_view(['DELETE'])
+# def post_delete(request, pk):
+#     post = Post.objects.filter(created_by=request.user).get(pk=pk)
+#     post.delete()
+
+#     return JsonResponse({'message': 'post deleted'})
+
 @api_view(['DELETE'])
 def post_delete(request, pk):
-    post = Post.objects.filter(created_by=request.user).get(pk=pk)
-    post.delete()
+    try:
+        post = Post.objects.get(pk=pk, created_by=request.user)
+        user = request.user
+        user.posts_count -= 1  # Decrement the user's post count
+        user.save()  # Save the user to update the post count in the database
+        post.delete()  # Delete the post
+        return JsonResponse({'message': 'Post deleted'}, status=200)
+    except Post.DoesNotExist:
+        return JsonResponse({'error': 'Post not found or not authorized to delete'}, status=404)
 
-    return JsonResponse({'message': 'post deleted'})
 
 
 @api_view(['POST'])

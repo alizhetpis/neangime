@@ -23,7 +23,8 @@ class Comment(models.Model):
         ordering = ('created_at',)
     
     def created_at_formatted(self):
-       return timesince(self.created_at)
+    #    return timesince(self.created_at)
+        return self.created_at.strftime("%H:%M %b %d")
 
 
 class PostAttachment(models.Model):
@@ -61,7 +62,7 @@ class Post(models.Model):
         ordering = ('-created_at',)
     
     def created_at_formatted(self):
-       return timesince(self.created_at)
+       return self.created_at.strftime("%H:%M %b %d")
     
 
 class Trend(models.Model):

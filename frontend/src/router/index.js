@@ -92,4 +92,10 @@ const router = createRouter({
   ]
 })
 
+router.afterEach((to) => {
+  // Используйте следующий JavaScript, чтобы установить заголовок при смене маршрута
+  const title = to.meta.title || 'neangime';
+  document.title = title;
+});
+
 export default router

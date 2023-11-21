@@ -1,6 +1,6 @@
 <template>
-    <div class="max-w-7xl mx-auto grid grid-cols-4 gap-4">
-        <div class="main-left col-span-3 space-y-4">
+    <div class="flex justify-center min-h-screen">
+        <div class="w-full max-w-4xl p-4">
             <div class="bg-white border border-gray-200 rounded-lg">
                 <form v-on:submit.prevent="submitForm" class="p-4 flex space-x-4">  
                     <input v-model="query" type="search" class="p-4 w-full bg-gray-100 rounded-lg" placeholder="What are you looking for?">
@@ -46,11 +46,11 @@
             </div>
         </div>
 
-        <div class="main-right col-span-1 space-y-4">
+        <!-- <div class="main-right col-span-1 space-y-4">
             <PeopleYouMayKnow />
 
             <Trends />
-        </div>
+        </div> -->
     </div>
 </template>
 
